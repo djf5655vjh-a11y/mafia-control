@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#060914">
+  <title>MAFIA Control - Sign in</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-body">
+  {% include "_icons.html" %}
+  <div class="bg" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i></div>
+
+  <main class="auth-wrap">
+    <form class="glass auth-card" method="post" action="{{ url_for('login') }}" autocomplete="on">
+      <div class="brand brand-lg">
+        <span class="brand-mark"><svg class="ic"><use href="#i-shield"/></svg></span>
+        <div>
+          <h1>MAFIA Control</h1>
+          <p>Key management console</p>
+        </div>
+      </div>
+
+      {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+
+      <label class="field">
+        <span>Username</span>
+        <div class="input">
+          <svg class="ic"><use href="#i-user"/></svg>
+          <input name="username" type="text" autocomplete="username" required autofocus spellcheck="false">
+        </div>
+      </label>
+
+      <label class="field">
+        <span>Password</span>
+        <div class="input">
+          <svg class="ic"><use href="#i-lock"/></svg>
+          <input id="pw" name="password" type="password" autocomplete="current-password" required>
+          <button class="icon-btn" type="button" id="togglePw" aria-label="Show password"><svg class="ic"><use href="#i-eye"/></svg></button>
+        </div>
+      </label>
+
+      <button class="btn btn-primary btn-block" type="submit">
+        <svg class="ic"><use href="#i-key"/></svg>Sign in
+      </button>
+    </form>
+  </main>
+
+  <script>
+    document.getElementById('togglePw').addEventListener('click', function () {
+      var f = document.getElementById('pw');
+      f.type = f.type === 'password' ? 'text' : 'password';
+    });
+  </script>
+</body>
+</html>

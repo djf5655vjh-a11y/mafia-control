@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#060914">
+  <meta name="csrf" content="{{ csrf_token() }}">
+  <title>MAFIA Control</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  {% include "_icons.html" %}
+  <div class="bg" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i></div>
+
+  <div class="shell">
+    <aside class="glass side">
+      <div class="brand">
+        <span class="brand-mark"><svg class="ic"><use href="#i-shield"/></svg></span>
+        <div><h1>MAFIA Control</h1><p id="hostLine">Detecting host</p></div>
+      </div>
+      <nav class="nav" id="nav">
+        <button data-tab="overview" class="on"><svg class="ic"><use href="#i-grid"/></svg><span>Overview</span></button>
+        <button data-tab="keys"><svg class="ic"><use href="#i-key"/></svg><span>Keys</span></button>
+        <button data-tab="logs"><svg class="ic"><use href="#i-activity"/></svg><span>Activity</span></button>
+        <button data-tab="connect"><svg class="ic"><use href="#i-link"/></svg><span>Connect</span></button>
+      </nav>
+      <button class="btn btn-ghost side-out" id="logoutBtn"><svg class="ic"><use href="#i-logout"/></svg><span>Sign out</span></button>
+    </aside>
+
+    <main class="main">
+      <header class="top">
+        <h2 id="pageTitle">Overview</h2>
+        <div class="top-actions">
+          <button class="btn btn-ghost" id="refreshBtn"><svg class="ic"><use href="#i-refresh"/></svg><span>Refresh</span></button>
+          <button class="btn btn-primary" id="newKeyBtn"><svg class="ic"><use href="#i-plus"/></svg><span>Generate keys</span></button>
+        </div>
+      </header>
+
+      <!-- Overview -->
+      <section id="tab-overview" class="tab on">
+        <div class="stats" id="stats"></div>
+        <div class="grid2">
+          <div class="glass card">
+            <h3>Key checks, last 7 days</h3>
+            <div class="bars" id="bars"></div>
+            <div class="legend"><span><i class="dot ok"></i>Accepted</span><span><i class="dot fail"></i>Rejected</span></div>
+          </div>
+          <div class="glass card">
+            <h3>Server</h3>
+            <dl class="kv" id="sysInfo"></dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- Keys -->
+      <section id="tab-keys" class="tab">
+        <div class="glass card">
+          <div class="toolbar">
+            <div class="input grow"><svg class="ic"><use href="#i-search"/></svg>
+              <input id="q" type="search" placeholder="Search by key or label" spellcheck="false"></div>
+            <select id="statusFilter" class="select">
+              <option value="all">All keys</option><option value="active">Active</option>
+              <option value="expired">Expired</option><option value="revoked">Revoked</option>
+            </select>
+            <a class="btn btn-ghost" href="/api/admin/export.csv"><svg class="ic"><use href="#i-download"/></svg><span>Export CSV</span></a>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Key</th><th>Label</th><th>Plan</th><th>Status</th><th>Devices</th><th>Expires</th><th>Last used</th><th class="r">Actions</th></tr></thead>
+              <tbody id="keyRows"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="keysEmpty" hidden>
+            <svg class="ic"><use href="#i-key"/></svg>
+            <p>No keys match. Generate your first key to get started.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Activity -->
+      <section id="tab-logs" class="tab">
+        <div class="glass card">
+          <div class="toolbar">
+            <select id="logKind" class="select">
+              <option value="all">All activity</option><option value="verify">Key checks</option><option value="admin">Admin actions</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Time</th><th>Event</th><th>Detail</th><th>IP address</th></tr></thead>
+              <tbody id="logRows"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="logsEmpty" hidden><svg class="ic"><use href="#i-activity"/></svg><p>No activity yet.</p></div>
+        </div>
+      </section>
+
+      <!-- Connect -->
+      <section id="tab-connect" class="tab">
+        <div class="glass card">
+          <h3>Connect URL</h3>
+          <p class="muted">Detected from this server. Paste it into your app as the license server address.</p>
+          <div class="urlbox">
+            <svg class="ic"><use href="#i-link"/></svg>
+            <code id="connectUrl">-</code>
+            <button class="btn btn-primary" id="copyUrl"><svg class="ic"><use href="#i-copy"/></svg><span>Copy</span></button>
+          </div>
+          <dl class="kv" id="hostInfo"></dl>
+        </div>
+        <div class="glass card">
+          <h3>How an app checks a key</h3>
+          <p class="muted">Send a POST request with the key and a stable device id. A rejected key returns ok false with a reason.</p>
+          <div class="tabs-mini" id="snipTabs">
+            <button data-s="python" class="on">Python</button><button data-s="js">JavaScript</button><button data-s="curl">curl</button>
+          </div>
+          <div class="code-wrap"><pre class="code" id="snippet"></pre>
+            <button class="icon-btn code-copy" id="copySnip" aria-label="Copy code"><svg class="ic"><use href="#i-copy"/></svg></button></div>
+          <h3 class="mt">Possible answers</h3>
+          <dl class="kv">
+            <div><dt>ok true</dt><dd>Key is valid. Includes plan, expires_at, days_left and lifetime.</dd></div>
+            <div><dt>invalid_key</dt><dd>The key does not exist.</dd></div>
+            <div><dt>expired / revoked</dt><dd>The key can no longer be used.</dd></div>
+            <div><dt>device_limit</dt><dd>The key is already bound to the maximum number of devices.</dd></div>
+          </dl>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Generate modal -->
+  <div class="modal" id="genModal" hidden>
+    <div class="glass modal-card" role="dialog" aria-modal="true" aria-labelledby="genTitle">
+      <div class="modal-head"><h3 id="genTitle">Generate keys</h3><button class="icon-btn" data-close aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+      <div class="form-grid">
+        <label class="field"><span>Number of keys</span><div class="input"><input id="gCount" type="number" min="1" max="200" value="1"></div></label>
+        <label class="field"><span>Plan</span>
+          <select id="gPlan" class="select"><option>standard</option><option>pro</option><option>premium</option><option>vip</option></select></label>
+        <label class="field"><span>Valid for (days, 0 for lifetime)</span><div class="input"><input id="gDays" type="number" min="0" value="30"></div></label>
+        <label class="field"><span>Devices per key</span><div class="input"><input id="gDev" type="number" min="1" value="1"></div></label>
+        <label class="field"><span>Key prefix</span><div class="input"><input id="gPrefix" value="MAFIA" maxlength="8" spellcheck="false"></div></label>
+        <label class="field"><span>Label (customer or note)</span><div class="input"><input id="gLabel" maxlength="120"></div></label>
+      </div>
+      <div id="genResult" hidden>
+        <p class="muted" id="genCount"></p>
+        <textarea id="genOut" class="textarea" readonly rows="5"></textarea>
+        <button class="btn btn-ghost" id="copyGen"><svg class="ic"><use href="#i-copy"/></svg><span>Copy all</span></button>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close>Close</button>
+        <button class="btn btn-primary" id="genGo"><svg class="ic"><use href="#i-key"/></svg><span>Generate</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage modal -->
+  <div class="modal" id="manageModal" hidden>
+    <div class="glass modal-card" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <div class="modal-head"><h3 id="mTitle">Manage key</h3><button class="icon-btn" data-close aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+      <code class="keyline" id="mKey"></code>
+      <div class="form-grid">
+        <label class="field"><span>Label</span><div class="input"><input id="mLabel" maxlength="120"></div></label>
+        <label class="field"><span>Plan</span>
+          <select id="mPlan" class="select"><option>standard</option><option>pro</option><option>premium</option><option>vip</option></select></label>
+        <label class="field"><span>Devices allowed</span><div class="input"><input id="mDev" type="number" min="1"></div></label>
+        <label class="field"><span>Add days (negative removes)</span><div class="input"><input id="mDays" type="number" value="0"></div></label>
+      </div>
+      <label class="check"><input type="checkbox" id="mLife"><span>Make this key lifetime</span></label>
+      <p class="muted" id="mExpiry"></p>
+      <h4>Bound devices</h4>
+      <div id="mDevices" class="devs"></div>
+      <div class="modal-foot spread">
+        <button class="btn btn-ghost" id="mReset"><svg class="ic"><use href="#i-refresh"/></svg><span>Reset devices</span></button>
+        <div class="row">
+          <button class="btn btn-ghost" data-close>Cancel</button>
+          <button class="btn btn-primary" id="mSave"><svg class="ic"><use href="#i-check"/></svg><span>Save changes</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm modal -->
+  <div class="modal" id="confirmModal" hidden>
+    <div class="glass modal-card narrow" role="dialog" aria-modal="true" aria-labelledby="cTitle">
+      <h3 id="cTitle">Are you sure</h3>
+      <p class="muted" id="cText"></p>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close>Cancel</button>
+        <button class="btn btn-danger" id="cGo">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <script src="{{ url_for('static', filename='panel.js') }}"></script>
+</body>
+</html>
